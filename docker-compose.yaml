@@ -1,0 +1,62 @@
+version: "3.7"
+
+services:
+  oauth2-proxy:
+    image: bitnami/oauth2-proxy:7.3.0
+    container_name: oauth2-proxy1
+    command:
+      - --http-address
+      - 0.0.0.0:4180
+    environment:
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: true
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: true
+      OAUTH2_PROXY_COOKIE_SECRET: cYW8ox+3ySQZ5M+92hsZhnUqiQqM5U7B
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: true
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_LOGIN_URL: http://kubernetes.docker.internal:7080/realms/example-realm/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://kubernetes.docker.internal:7080/realms/example-realm/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://kubernetes.docker.internal:7080/realms/example-realm/protocol/openid-connect/certs
+      OAUTH2_PROXY_UPSTREAMS: http://blogs-frontend:3000/
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_CLIENT_ID: auth-proxy-client
+      OAUTH2_PROXY_CLIENT_SECRET: 7smr2n6a5VCQKtcziFIr5FQj5OiyUCkO
+      OAUTH2_PROXY_REDIRECT_URL: http://kubernetes.docker.internal:4180/oauth2/callback
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://kubernetes.docker.internal:7080/realms/example-realm
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*" # allow any email domains
+      OAUTH2_PROXY_SHOW_DEBUG_ON_ERROR: true
+      OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER: true
+      OAUTH2_PROXY_COOKIE_REFRESH: "4m" # the access token in keycloak expires in 5 minutes https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/docs/configuration/sessions.md#redis-storage
+    ports:
+      - 4180:4180
+    depends_on:
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    hostname: keycloak1
+    domainname: keycloak1.local
+    container_name: keycloak1
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - 7080:8080
+    command:
+      - "start-dev"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+  blogs-frontend:
+    build:
+      context: ./nextjs-blog
+      dockerfile: Dockerfile
+
+  blogs-backend:
+    build:
+      context: ./blogs_backend
+      dockerfile: Dockerfile
+    environment:
+      TOKEN_ISSUER: http://kubernetes.docker.internal:7080/realms/example-realm
