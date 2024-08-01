@@ -3,21 +3,16 @@
 
 An example of how to use OAuth2-Proxy and Keycloak to give authentication capability in any kind of web application.
 
-## Features
-- OAuth2-Proxy integrate with KeyCloak
-- Sample Project
-
+## Requirements
+* docker and docker-compose
 
 ## Usage
-- Install docker and docker compose in your environment
-- Go to the folder of the docker compose file and run this command:
-
 ```shell
 docker compose up
 ```
 
 - Then open the dashboard page [http://kubernetes.docker.internal:4180/blogs/valid-access](http://kubernetes.docker.internal:4180/blogs/valid-access)
-- You will be redirected to logon page of keyloak. Login using the credentials mjane:password
+- You will be redirected to login page of keyloak. Login using the credentials mjane:password
 - After the successful login you will see a list of 5 blog entries
 
 ## Authentication User
@@ -54,3 +49,27 @@ docker compose up
 
 
 [![](https://mermaid.ink/img/pako:eNqVkk1vwjAMhv-KlRNITLBppx6Q9ilNu0xj2qkXL3UhIk06x2FCiP--9IOhDi700srx-_h9U--U9gWpTAX6juQ0PRpcMla5g_TUyGK0qdEJPFhD6YUB7q1fBnhm74Rccdr5TsFH1rQg3hAfFXdvL6fNr7TV1uM6d91ZN-ZqPh9SskRNBoPAFGsz_WqBP0ZWgFpTCCB-TT1iqEyow4wMPtGaAoUGKhjFQGxc6SHlqb1xMu5IB-GAsSBkvYKQ9MY7KD2f8YBW4KOFmwCbZmpXH1DPppTIDhpD0Doa3cxm46P2X7ZE6C7sT9ncTIohbCh0MrKBjl6Mu9wNMaeQo9vZ9SVOWlVvoVkTNVEVcYWmSOu2aw5yJSuqKFdZ-iyoxGglV7nbp1aM4hdbp1UmHGmiYt38t347VVZiSnWoPhVGPPfF_S8wOfdz?type=png)](https://mermaid.live/edit#pako:eNqVkk1vwjAMhv-KlRNITLBppx6Q9ilNu0xj2qkXL3UhIk06x2FCiP--9IOhDi700srx-_h9U--U9gWpTAX6juQ0PRpcMla5g_TUyGK0qdEJPFhD6YUB7q1fBnhm74Rccdr5TsFH1rQg3hAfFXdvL6fNr7TV1uM6d91ZN-ZqPh9SskRNBoPAFGsz_WqBP0ZWgFpTCCB-TT1iqEyow4wMPtGaAoUGKhjFQGxc6SHlqb1xMu5IB-GAsSBkvYKQ9MY7KD2f8YBW4KOFmwCbZmpXH1DPppTIDhpD0Doa3cxm46P2X7ZE6C7sT9ncTIohbCh0MrKBjl6Mu9wNMaeQo9vZ9SVOWlVvoVkTNVEVcYWmSOu2aw5yJSuqKFdZ-iyoxGglV7nbp1aM4hdbp1UmHGmiYt38t347VVZiSnWoPhVGPPfF_S8wOfdz)
+
+## Under the hood
+
+### Keycloak
+1. In keycloak we created a new realm named `example-realm`
+2. In the `example-realm` create a user.
+3. It is important that the user has a verified email adress
+4. Set a password for the user
+5. Create a new client. For details take a look at [the oauth2-proxy guide](https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc)
+
+### Oauth2-proxy
+1. Create a cookie secrect. `openssl rand -base64 32 | tr -- '+/' '-_'` and set the `OAUTH2_PROXY_COOKIE_SECRET` env
+2. Add upstream service. 
+3. Configurate Oauth Client from keycloak. `OAUTH2_PROXY_CLIENT_ID`, `OAUTH2_PROXY_CLIENT_SECRET`, `OAUTH2_PROXY_REDIRECT_URL` and `OAUTH2_PROXY_OIDC_ISSUER_URL`
+4. Due to a bug we need to disable the OpenID connect auto discover. `OAUTH2_PROXY_SKIP_OIDC_DISCOVERY`, `OAUTH2_PROXY_LOGIN_URL`, `OAUTH2_PROXY_REDEEM_URL`, `OAUTH2_PROXY_OIDC_JWKS_URL`
+5. Pass the access token to the upstream service via `OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER` and `OAUTH2_PROXY_PASS_ACCESS_TOKEN`
+6. The access token from keycloak is valid only for *5 minutes*. We can ask the oauth2-proxy to handle the refresh logic. Set the `OAUTH2_PROXY_COOKIE_REFRESH` variable to 4 minutes. This [ensures enough time](https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/docs/configuration/sessions.md#redis-storage) to refresh the access token.
+7. For the testing purose skip the email and cookie restrictions. `OAUTH2_PROXY_EMAIL_DOMAINS`, `OAUTH2_PROXY_COOKIE_SECURE`
+
+### API Backend
+1. Set the JWT token issuer of the access token in order to validate the acces token against keycloak. This must be the same issuer as for the oauth2-proxy.
+
+### Frontent
+The frontend must be able to access the header of the request in order to exctract the access token from the `x-forwarded-access-token` custom header
