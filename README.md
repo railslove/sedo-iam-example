@@ -5,21 +5,20 @@ An example of how to use OAuth2-Proxy and Keycloak to give authentication capabi
 
 ## Features
 - OAuth2-Proxy integrate with KeyCloak
-- Sample 
+- Sample Project
 
 
 ## Usage
 - Install docker and docker compose in your environment
-- Change the "keycloakIP" value in .env file with the IP Address of your docker host (cannot use 127.0.0.1)
 - Go to the folder of the docker compose file and run this command:
 
 ```shell
 docker compose up
 ```
 
-- Then open the congrats.html in port 4180 (http://"YOUR HOST IP":4180/congrats.html)
-- You will be redirected to logon page of keyloak. Login using test1/pass123
-- If all is good, you will be seeing this page:
+- Then open the dashboard page [http://kubernetes.docker.internal:4180/blogs/valid-access](http://kubernetes.docker.internal:4180/blogs/valid-access)
+- You will be redirected to logon page of keyloak. Login using the credentials mjane:password
+- After the successful login you will see a list of 5 blog entries
 
 ## Authentication User
 1. User enters the hostname.
