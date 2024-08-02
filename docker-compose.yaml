@@ -27,6 +27,7 @@ services:
       OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER: true
       OAUTH2_PROXY_COOKIE_REFRESH: "4m" # the access token in keycloak expires in 5 minutes https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/docs/configuration/sessions.md#redis-storage
       # OAUTH2_PROXY_CODE_CHALLENGE_METHOD: "S256"
+      OAUTH2_PROXY_SCOPE: "openid email profile organization"
     ports:
       - 4180:4180
     depends_on:
@@ -42,7 +43,7 @@ services:
     ports:
       - 7080:8080
     command:
-      ["start-dev", "--import-realm"]
+      ["start-dev", "--import-realm", "--features", "organization,admin-fine-grained-authz"]
       # ["start-dev"]
     volumes:
       - ./keycloak:/opt/keycloak/data/import
